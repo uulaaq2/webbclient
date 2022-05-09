@@ -1,0 +1,50 @@
+{
+  "name": "new-react-app",
+  "version": "1.0.0",
+  "description": "A new react app without CRA",
+  "main": "index.js",
+  "scripts": {
+    "start": "webpack-dev-server .",
+    "build": "Webpack .",
+    "test": "test"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "^7.17.2",
+    "@babel/plugin-transform-runtime": "^7.17.0",
+    "@babel/preset-env": "^7.16.11",
+    "@babel/preset-react": "^7.16.7",
+    "@babel/runtime": "^7.17.2",
+    "@material-ui/core": "^4.12.4",
+    "babel-eslint": "^10.1.0",
+    "babel-loader": "^8.2.3",
+    "css-loader": "^6.7.1",
+    "eslint": "^8.9.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-jest": "^26.1.0",
+    "file-loader": "^6.2.0",
+    "style-loader": "^3.3.1",
+    "webpack": "^5.68.0",
+    "webpack-cli": "^4.9.2",
+    "webpack-dev-server": "^4.7.4"
+  },
+  "dependencies": {
+    "@babel/cli": "^7.17.0",
+    "@emotion/react": "^11.9.0",
+    "@emotion/styled": "^11.8.1",
+    "@mui/icons-material": "^5.6.2",
+    "@mui/lab": "^5.0.0-alpha.79",
+    "@mui/material": "^5.6.3",
+    "@xstate/react": "^3.0.0",
+    "axios": "^0.27.2",
+    "path": "^0.12.7",
+    "process": "^0.11.10",
+    "react": "^18.1.0",
+    "react-dom": "^18.1.0",
+    "react-router-dom": "^6.3.0",
+    "xstate": "^4.32.0"
+  },
+  "proxy": "http://AUBOTD9X94HD2:3001"
+}
