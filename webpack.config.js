@@ -73,7 +73,8 @@ module.exports={
             baseComponents: "/src/baseComponents",
             pages: "/src/pages",
             state: "/src/state",
-            config: "/src/config"
+            config: "/src/config",
+            functions: "/src/functions"
         }
     },
     module:{

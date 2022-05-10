@@ -20,7 +20,8 @@ const App = () => {
   return (
     <AppMachineContext.Provider value={{ currentMachine, sendToCurrentMachine}}>      
       <Router>
-        <Routes>
+        <Routes>        
+            <Route path="/" element={<Home />} />                    
             <Route path="public" element={<Public />} />        
             <Route path="signIn" element={<SignIn />} />
             <Route 
