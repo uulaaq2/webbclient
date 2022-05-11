@@ -23,6 +23,6 @@ export async function baseFetch(method, url, data = {}, accepts = {}) {
 
     return requestResult.data
   } catch (error) {
-    return setError(error.message)
+    return setError(error)
   }  
 }

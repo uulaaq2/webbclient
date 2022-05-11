@@ -21,9 +21,9 @@ const App = () => {
     <AppMachineContext.Provider value={{ currentMachine, sendToCurrentMachine}}>      
       <Router>
         <Routes>        
-            <Route path="/" element={<Home />} />                    
-            <Route path="public" element={<Public />} />        
-            <Route path="signIn" element={<SignIn />} />
+            <Route exact path="/" element={<Home />} />                    
+            <Route exact path="public" element={<Public />} />        
+            <Route exact path="signIn" element={<SignIn />} />
             <Route 
               path="protected" 
               element={

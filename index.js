@@ -22,13 +22,16 @@ const theme = createTheme({
                   contrastText: '#6a0dad'
             }
       },
-      shadows: Array(25).fill("none")
+      shadows: Array(25).fill("none"),
+      
 });
 
 const container = document.getElementById("root");
 const root = createRoot(container);
 root.render(
       <React.StrictMode>
-            <App />
+            <ThemeProvider theme={theme}>
+                  <App />
+            </ThemeProvider>
       </React.StrictMode>
 );

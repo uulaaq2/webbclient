@@ -1,8 +1,8 @@
 import { createContext } from 'react'
-import { createMachine, assign, send } from 'xstate'
+import { createMachine, assign, send, actions } from 'xstate'
 import { getUser } from 'functions/user/getUser'
 import { setSuccess, setWarning, setError } from 'functions/setReply'
-import { areArraysEqual } from '@mui/base'
+import { setLocalStorage } from 'functions/localStorage'
 
 // app global context
 export const AppMachineContext = createContext()
@@ -10,10 +10,11 @@ export const AppMachineContext = createContext()
 // app machine to prepare the global app context
 export const appMachine = createMachine({
   id: 'app',
+  preserveActionOrder: true,
   initial: 'init',
   context: {
-    user: undefined,
-    reply: undefined
+    userInfo: undefined,
+    inProgress: false
   },
 
   states: {
@@ -22,12 +23,14 @@ export const appMachine = createMachine({
     auth: {
       states: {
         validating: {
+          entry: assign({ inProgress: true}),
           invoke: {
-            id: 'validateUser',
-            src: doGetUser,
+            id: 'validateUser',   
+            src: doGetUser,            
             onDone: [
-              {
+              {     
                 target: 'storingToken',
+                actions: assign({ userInfo: (context, event) => event.data }),
                 cond: (context, event) => event.data.status === 'ok'
               },
               {
@@ -35,30 +38,39 @@ export const appMachine = createMachine({
               }
             ],
             onError: {
-
+              target: 'failed'
             }          
-          }
-        
+          }        
         // validate
         },
         storingToken: {
+          entry: assign({ inProgress: true}),
           invoke: {
-            src: (context, event) => console.log(event)
-          }
-          
+            id: 'storeToken',   
+            src: doStoreToken,            
+            onDone: [
+              {     
+                target: 'success',
+                cond: (context, event) => event.data.status === 'ok'
+              },
+              {
+                target: 'failed'
+              }
+            ],
+            onError: {
+              target: 'failed'
+            }          
+          }        
         // store token  
         },
         success: {
-          invoke: {
-            src: (context, event) => console.log('success ', event)
-          }          
+          entry: assign({ inProgress: false}),
+          type: 'final'
         // success  
         },
-        failed: {
-          id: 'failed',
-          invoke: {
-            src: (contex, event) => console.log('failed ', event)
-          }
+        failed: {          
+          entry: assign({ inProgress: false}),
+          type: 'final'
         // failed
         }
       // auth states
@@ -72,25 +84,35 @@ export const appMachine = createMachine({
   on: {
     VALIDATE: {
       target: 'auth.validating'
-    },
-
-    STORE_TOKEN: {
-      target: 'auth.storingToken'
     }
-  }
- 
+  } 
+
 })
 
 // call getUser function
-async function doGetUser(_, event) {  
+async function doGetUser(context, event) {  
   try {
-    const email = event.email
-    const password = event.password
-  
+    const { email, password, rememberMe } = event
+
     const getUserResult = await getUser(email, password)    
 
-    return getUserResult
+    return {
+      ...getUserResult,
+      clientRememberMe: rememberMe
+    }
   } catch (error) {
     return setError(error)   
+  }
+}
+
+// set token Local storage
+async function doStoreToken(context, event) {
+  try {        
+    let rememberMe = event.data.clientRememberMe && event.data.user.Can_Be_Remembered
+    
+    return setLocalStorage('token', event.data.token, rememberMe)
+  } catch (error) {
+
+    return setError(error)
   }
 }
