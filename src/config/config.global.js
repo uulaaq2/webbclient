@@ -23,7 +23,7 @@ module.exports = {
                 name: 'Sign in'
             },
             changePassword: {
-                path: '/changepassword',
+                path: '/me/changepassword',
                 name: 'Change password'
             }
         },

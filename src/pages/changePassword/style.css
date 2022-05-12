@@ -7,7 +7,7 @@
   justify-content: center;
 }
 
-.loginBox {
+.box {
   padding: 1rem 2rem 1rem 2rem;
   width: 100vw;
   max-width: 410px;
@@ -19,21 +19,21 @@
   margin-bottom: 2rem;
 }
 
-.loginBoxContent {
+.title {
+  margin-bottom: 1.5rem;
+}
+
+.boxContent {
   display: flex;
   flex-direction: column;
   gap: 1.2rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.loginBoxFooter {
+.boxFooter {
 
 }
 
-.checkBoxGroup {
-  margin-top: -0.5rem;
-}
-
-.loginBoxError {
+.boxError {
   margin-top: 1rem;
 }

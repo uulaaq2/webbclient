@@ -10,7 +10,7 @@ function pageInitial(pageInfo) {
     page = page[pages[i]]
   }
 
-  document.title = page.name  
+  document.title = page.name + ' | ' + config.app.name
 }
 
 export default pageInitial

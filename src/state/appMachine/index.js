@@ -3,6 +3,7 @@ import { createMachine, assign, send, actions } from 'xstate'
 import { getUser } from 'functions/user/getUser'
 import { setSuccess, setWarning, setError } from 'functions/setReply'
 import { setLocalStorage } from 'functions/localStorage'
+import { ConstructionOutlined } from '@mui/icons-material'
 
 // app global context
 export const AppMachineContext = createContext()
@@ -22,17 +23,33 @@ export const appMachine = createMachine({
 
     auth: {
       states: {
-        validating: {
+        gettingUser: {
           entry: assign({ inProgress: true}),
+          exit:  assign({ userInfo: (context, event) => event.data }),
           invoke: {
-            id: 'validateUser',   
-            src: doGetUser,            
-            onDone: [
+            id: 'getUser',   
+            src: doGetUser,                        
+            onDone: [       
               {     
                 target: 'storingToken',
-                actions: assign({ userInfo: (context, event) => event.data }),
                 cond: (context, event) => event.data.status === 'ok'
               },
+              {     
+                target: 'accountIsExpired',
+                cond: (context, event) => event.data.status === 'accountIsExpired'
+              },     
+              {     
+                target: 'shouldChangePassword',
+                cond: (context, event) => event.data.status === 'shouldChangePassword'
+              },                         
+              {     
+                target: 'warning',
+                cond: (context, event) => event.data.status === 'warning'
+              },     
+              {     
+                target: 'error',
+                cond: (context, event) => event.data.status === 'error'
+              },                                      
               {
                 target: 'failed'
               }
@@ -41,7 +58,7 @@ export const appMachine = createMachine({
               target: 'failed'
             }          
           }        
-        // validate
+        // gettingUser
         },
         storingToken: {
           entry: assign({ inProgress: true}),
@@ -51,6 +68,7 @@ export const appMachine = createMachine({
             onDone: [
               {     
                 target: 'success',
+                actions: () => console.log('b'),
                 cond: (context, event) => event.data.status === 'ok'
               },
               {
@@ -61,13 +79,32 @@ export const appMachine = createMachine({
               target: 'failed'
             }          
           }        
-        // store token  
+        // storingToken
         },
         success: {
-          entry: assign({ inProgress: false}),
           type: 'final'
         // success  
         },
+        accountIsExpired : {
+          entry: assign({ inProgress: false}),
+          type: 'final'
+        // accountIsExpired
+        },
+        shouldChangePassword: {
+          entry: assign({ inProgress: false}),
+          type: 'final'
+        // shouldChangePassword
+        },
+        warning : {
+          entry: assign({ inProgress: false}),
+          type: 'final'
+        // warning
+        },
+        error: {
+          entry: assign({ inProgress: false}),
+          type: 'final'
+        // error
+        },        
         failed: {          
           entry: assign({ inProgress: false}),
           type: 'final'
@@ -83,7 +120,7 @@ export const appMachine = createMachine({
 
   on: {
     VALIDATE: {
-      target: 'auth.validating'
+      target: 'auth.gettingUser'
     }
   } 
 
@@ -108,6 +145,7 @@ async function doGetUser(context, event) {
 // set token Local storage
 async function doStoreToken(context, event) {
   try {        
+    console.log('aaa')
     let rememberMe = event.data.clientRememberMe && event.data.user.Can_Be_Remembered
     
     return setLocalStorage('token', event.data.token, rememberMe)

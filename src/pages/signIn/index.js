@@ -12,13 +12,12 @@ import CheckBoxGroup from 'baseComponents/CheckboxGroup'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { Grid, Paper, Box, Button, CircularProgress } from '@mui/material'
 import { LoadingButton } from '@mui/lab'
-import { Check } from '@mui/icons-material'
 import { AppMachineContext } from 'state/appMachine'
 
 const SignIn = ({ urlInfo }) => {  
   pageInitial( {pageName: 'user.signIn'} )
 
-  const { currentMachine, sendToCurrentMachine} = useContext(AppMachineContext)
+  const { currentMachine, sendToCurrentMachine, currentService} = useContext(AppMachineContext)
 
   const emailRef = useRef()
   const passwordRef = useRef()
@@ -74,14 +73,23 @@ const SignIn = ({ urlInfo }) => {
       })
 
     } catch (error) {
-      setFormError(error.message)
+      console.log(error)
     }
   }
-  
-  if (currentMachine.context?.userInfo?.status === 'ok') {
-   return (navigate(config.urls.home.path))
-  }
-    
+
+  useEffect(() => {    
+
+    if (currentService.getSnapshot().value.auth === 'success') {
+      navigate(config.urls.home.path)
+    }
+
+    if (currentService.getSnapshot().value.auth === 'shouldChangePassword') {
+      const tokenParam = '/' + currentMachine.context.userInfo.token + '0' + (rememberMeRef.current.checked ? '1' : '0')      
+      navigate(config.urls.user.changePassword.path + tokenParam)
+    }
+
+  }, [currentService.getSnapshot().value.auth]) 
+ 
   return (
     <>
       <Grid className={moduleStyle.wrapper}>
@@ -98,13 +106,18 @@ const SignIn = ({ urlInfo }) => {
           <Box className={moduleStyle.loginBoxfooter}>
             <LoadingButton variant='contained' fullWidth onClick={handleSignIn} loading={currentMachine.context.inProgress} endIcon={<></>} loadingPosition='end' >Sign in</LoadingButton>
           </Box>
-          <Box>
-          
+          <Box className={moduleStyle.loginBoxError}>
+            { (currentMachine.matches('auth.accountIsExpired') || currentMachine.matches('auth.warning') || currentMachine.matches('auth.error')) ?
+              <FormError message={currentMachine.context.userInfo.message} />
+              :
+              ''
+            }
           </Box>
         </Paper>
       </Grid>
     </>
   );
+  
 };
 
 export default SignIn;
