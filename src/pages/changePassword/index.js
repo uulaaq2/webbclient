@@ -5,16 +5,17 @@ import logo from 'images/logo.png'
 import config from 'config'
 import pageInitial from 'functions/pageInitial'
 import moduleStyle from 'pages/ChangePassword/style.css'
-import { clearErrors, validateInputFields } from 'functions/validateInputFields'
+import { validateInputFields } from 'functions/validateInputFields'
 import FormError from 'baseComponents/Alerts/FormError'
 import InputGroup from 'baseComponents/InputGroup'
 import CheckBoxGroup from 'baseComponents/CheckboxGroup'
+
+import changePassword from 'functions/user/changePassword'
 
 import { Navigate, useNavigate } from 'react-router-dom'
 import { Grid, Paper, Box, Button, CircularProgress, Typography } from '@mui/material'
 import { LoadingButton } from '@mui/lab'
 import { AppMachineContext } from 'state/appMachine'
-import { LocalConvenienceStoreOutlined } from '@mui/icons-material'
 
 const getToken = (token) => token.substring(0, token.length - 2)
 const getShowCurrentPassword = (token) => token.charAt(token.length - 2) === '1' ? true : false
@@ -86,6 +87,9 @@ const ChanePassword = () => {
         throw new Error(validateInputFieldsResult.message) 
       }
       if (validateInputFieldsResult.status !== 'ok') return
+
+      const aaa = await changePassword(getToken(token), newPasswordRef.current.value)
+      console.log(aaa)
 
     } catch (error) {
       console.log(error)

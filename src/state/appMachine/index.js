@@ -1,6 +1,6 @@
 import { createContext } from 'react'
 import { createMachine, assign, send, actions } from 'xstate'
-import { getUser } from 'functions/user/getUser'
+import getUser from 'functions/user/getUser'
 import { setSuccess, setWarning, setError } from 'functions/setReply'
 import { setLocalStorage } from 'functions/localStorage'
 import { ConstructionOutlined } from '@mui/icons-material'
