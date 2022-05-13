@@ -1,0 +1,39 @@
+.wrapper {
+  width: 100vw;
+  max-width: 100vw;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.box {
+  padding: 1rem 2rem 1rem 2rem;
+  width: 100vw;
+  max-width: 410px;
+}
+
+.logo {
+  max-width: 120px;
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+}
+
+.title {
+  margin-bottom: 1.5rem;
+}
+
+.boxContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+
+.boxFooter {
+
+}
+
+.boxError {
+  margin-top: 1rem;
+}

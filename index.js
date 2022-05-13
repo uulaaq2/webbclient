@@ -2,6 +2,7 @@ import React from 'react';
 import { createRoot } from "react-dom/client";
 import App from 'app'
 import { createTheme, ThemeProvider, styled } from '@mui/material/styles'
+import { GlobalStateProvider } from 'state/globalState'
 
 const theme = createTheme({
       shape: {
@@ -30,8 +31,10 @@ const container = document.getElementById("root");
 const root = createRoot(container);
 root.render(
       <React.StrictMode>
-            <ThemeProvider theme={theme}>
-                  <App />
-            </ThemeProvider>
+            <GlobalStateProvider>
+                  <ThemeProvider theme={theme}>
+                        <App />
+                  </ThemeProvider>
+            </GlobalStateProvider>
       </React.StrictMode>
 );

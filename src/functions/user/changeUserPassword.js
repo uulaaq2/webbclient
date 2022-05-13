@@ -2,7 +2,7 @@ import { setScuess, setWarning, setError } from 'functions/setReply'
 import { fetchOptions, baseFetch } from "functions/baseFetch"
 import config from 'config'
 
-async function ChangePassword(token, newPassword) {
+async function changeUserPassword(token, newPassword) {
   try {
     const url = config.api.urls.user.changePassword
     console.log(url)
@@ -18,4 +18,4 @@ async function ChangePassword(token, newPassword) {
   }
 }
 
-export default ChangePassword
+export default changeUserPassword

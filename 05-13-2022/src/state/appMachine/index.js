@@ -1,9 +1,11 @@
 import { createContext } from 'react'
-import { createMachine, assign, send, actions } from 'xstate'
-import getUser from 'functions/user/getUser'
+import { createMachine, assign, actions, useMachine } from 'xstate'
+import signInWithCredentials from 'functions/user/signInWithCredentials'
+import changeUserPassword from 'functions/user/changeUserPassword'
 import { setSuccess, setWarning, setError } from 'functions/setReply'
 import { setLocalStorage } from 'functions/localStorage'
-import { ConstructionOutlined } from '@mui/icons-material'
+
+const [state, send, service] = useMachine(appMachine);
 
 // app global context
 export const AppMachineContext = createContext()
@@ -25,40 +27,33 @@ export const appMachine = createMachine({
       states: {
         gettingUser: {
           entry: assign({ inProgress: true}),
-          exit:  assign({ userInfo: (context, event) => event.data }),
           invoke: {
             id: 'getUser',   
-            src: doGetUser,                        
-            onDone: [       
-              {     
-                target: 'storingToken',
-                cond: (context, event) => event.data.status === 'ok'
-              },
-              {     
-                target: 'accountIsExpired',
-                cond: (context, event) => event.data.status === 'accountIsExpired'
-              },     
-              {     
-                target: 'shouldChangePassword',
-                cond: (context, event) => event.data.status === 'shouldChangePassword'
-              },                         
-              {     
-                target: 'warning',
-                cond: (context, event) => event.data.status === 'warning'
-              },     
-              {     
-                target: 'error',
-                cond: (context, event) => event.data.status === 'error'
-              },                                      
-              {
-                target: 'failed'
-              }
-            ],
+            src: doSignInWithCredentials,                        
+            onDone:{
+              //target: 'validatingUser',
+              actions: () => console.log('validatingUser'),
+              actions: actions.send('MY_EVENT_NAME', { to: context => context.sendTo })
+              //actions: assign({ userInfo: (context, event) => event.data })
+            },
             onError: {
               target: 'failed'
             }          
           }        
         // gettingUser
+        },
+        changingUserPassword: {
+          
+        // changingUserPassword
+        },
+        validatingUser: {
+          DENEME: 
+            {     
+              target: 'success',
+              //actions: (context, event) => console.log(context, event.data.status),
+              cond: (context, event) => context.userInfo.status === 'ok'
+            },
+          
         },
         storingToken: {
           entry: assign({ inProgress: true}),
@@ -68,8 +63,7 @@ export const appMachine = createMachine({
             onDone: [
               {     
                 target: 'success',
-                actions: () => console.log('b'),
-                cond: (context, event) => event.data.status === 'ok'
+                //cond: (context, event) => event.data.status === 'ok'
               },
               {
                 target: 'failed'
@@ -81,7 +75,8 @@ export const appMachine = createMachine({
           }        
         // storingToken
         },
-        success: {
+        success: {          
+          entry: () => console.log('success'),
           type: 'final'
         // success  
         },
@@ -119,26 +114,45 @@ export const appMachine = createMachine({
   },
 
   on: {
-    VALIDATE: {
+    SIGN_IN_WITH_CREDENTIALS: {
       target: 'auth.gettingUser'
+    },
+    CHANGE_USER_PASSWORD: {
+      target: 'auth.changingUserPassword'
     }
   } 
 
 })
 
-// call getUser function
-async function doGetUser(context, event) {  
+// sign in with credentials
+async function doSignInWithCredentials(context, event) {  
   try {
     const { email, password, rememberMe } = event
 
-    const getUserResult = await getUser(email, password)    
+    const signInWithCredentialsResult = await signInWithCredentials(email, password)    
 
     return {
-      ...getUserResult,
+      ...signInWithCredentialsResult,
       clientRememberMe: rememberMe
     }
   } catch (error) {
     return setError(error)   
+  }
+}
+
+// change user password
+async function doChangeUserPassword(context, event) {
+  try {
+    const { token, newPassword, rememberMe } = event
+
+    const changeUserPasswordResult = await changeUserPassword(token, newPassword)
+
+    return {
+      ...changeUserPasswordResult,
+      clientRememberMe: rememberMe
+    }
+  } catch (error) {
+    return setError(error)
   }
 }
 

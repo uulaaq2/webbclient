@@ -15,6 +15,7 @@ import changeUserPassword from 'functions/user/changeUserPassword'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { Grid, Paper, Box, Button, CircularProgress, Typography } from '@mui/material'
 import { LoadingButton } from '@mui/lab'
+import { AppMachineContext } from 'state/appMachine'
 
 const getToken = (token) => token.substring(0, token.length - 2)
 const getShowCurrentPassword = (token) => token.charAt(token.length - 2) === '1' ? true : false
@@ -24,6 +25,8 @@ const ChanePassword = () => {
   pageInitial( {pageName: 'user.changePassword'} )
 
   const { token } = useParams()
+
+  const { currentMachine, sendToCurrentMachine, currentService } = useContext(AppMachineContext)
 
   const currentPasswordRef = useRef()
   const newPasswordRef = useRef()

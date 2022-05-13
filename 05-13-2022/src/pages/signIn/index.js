@@ -12,16 +12,12 @@ import CheckBoxGroup from 'baseComponents/CheckboxGroup'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { Grid, Paper, Box, Button, CircularProgress } from '@mui/material'
 import { LoadingButton } from '@mui/lab'
-
-import { GlobalStateContext } from 'state/globalState';
-import { useSelector } from '@xstate/react';
+import { AppMachineContext } from 'state/appMachine'
 
 const SignIn = ({ urlInfo }) => {  
   pageInitial( {pageName: 'user.signIn'} )
 
-  const globalServices = useContext(GlobalStateContext);
-//  const isLoggedIn = useSelector(globalServices.authService, loggedInSelector);
-  const { send } = globalServices.authService
+  const { currentMachine, sendToCurrentMachine, currentService} = useContext(AppMachineContext)
 
   const emailRef = useRef()
   const passwordRef = useRef()
@@ -70,6 +66,12 @@ const SignIn = ({ urlInfo }) => {
       }
       if (validateInputFieldsResult.status !== 'ok') return
 
+      sendToCurrentMachine('SIGN_IN_WITH_CREDENTIALS', {
+        email: emailRef.current.value, 
+        password: passwordRef.current.value, 
+        rememberMe: rememberMeRef.current.checked 
+      })
+
     } catch (error) {
       console.log(error)
     }
@@ -77,8 +79,16 @@ const SignIn = ({ urlInfo }) => {
 
   useEffect(() => {    
 
+    if (currentService.getSnapshot().value.auth === 'success') {
+      navigate(config.urls.home.path)
+    }
 
-  }, []) 
+    if (currentService.getSnapshot().value.auth === 'shouldChangePassword') {
+      const tokenParam = '/' + currentMachine.context.userInfo.token + '0' + (rememberMeRef.current.checked ? '1' : '0')      
+      navigate(config.urls.user.changePassword.path + tokenParam)
+    }
+
+  }, [currentService.getSnapshot().value.auth]) 
  
   return (
     <>
@@ -94,9 +104,14 @@ const SignIn = ({ urlInfo }) => {
             <CheckBoxGroup label='Remember me' inputRef={rememberMeRef} className={moduleStyle.checkBoxGroup} />
           </Box>
           <Box className={moduleStyle.loginBoxfooter}>
-            <LoadingButton variant='contained' fullWidth onClick={() => send('onB')} loading={false} endIcon={<></>} loadingPosition='end' >Sign in</LoadingButton>
+            <LoadingButton variant='contained' fullWidth onClick={handleSignIn} loading={currentMachine.context.inProgress} endIcon={<></>} loadingPosition='end' >Sign in</LoadingButton>
           </Box>
           <Box className={moduleStyle.loginBoxError}>
+            { (currentMachine.matches('auth.accountIsExpired') || currentMachine.matches('auth.warning') || currentMachine.matches('auth.error')) ?
+              <FormError message={currentMachine.context.userInfo.message} />
+              :
+              ''
+            }
           </Box>
         </Paper>
       </Grid>
