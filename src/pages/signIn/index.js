@@ -8,20 +8,22 @@ import { clearErrors, validateInputFields } from 'functions/validateInputFields'
 import FormError from 'baseComponents/Alerts/FormError'
 import InputGroup from 'baseComponents/InputGroup'
 import CheckBoxGroup from 'baseComponents/CheckboxGroup'
+import NavigateTo from 'baseComponents/NavigateTo'
 
 import { Navigate, useNavigate } from 'react-router-dom'
 import { Grid, Paper, Box, Button, CircularProgress } from '@mui/material'
 import { LoadingButton } from '@mui/lab'
 
-import { GlobalStateContext } from 'state/globalState';
-import { useSelector } from '@xstate/react';
+import { GlobalStateContext } from 'state/globalState'
+import { useActor } from '@xstate/react'
 
 const SignIn = ({ urlInfo }) => {  
   pageInitial( {pageName: 'user.signIn'} )
 
-  const globalServices = useContext(GlobalStateContext);
+  const globalServices = useContext(GlobalStateContext)  
 //  const isLoggedIn = useSelector(globalServices.authService, loggedInSelector);
   const { send } = globalServices.authService
+  const [ state  ] = useActor(globalServices.authService)  
 
   const emailRef = useRef()
   const passwordRef = useRef()
@@ -31,7 +33,6 @@ const SignIn = ({ urlInfo }) => {
   const [erroredInputs, setErroredInputs] = useState([])  
   const [inputs] = useState({
     email: {      
-      name: 'Email or User Name',
       label: 'Email or User name',
       type: 'text',
       errorText: '',
@@ -40,7 +41,6 @@ const SignIn = ({ urlInfo }) => {
       validate: true
     },
     password: {
-      name: 'Password',
       label: 'Password',
       type: 'password',
       errorText: '',
@@ -53,6 +53,7 @@ const SignIn = ({ urlInfo }) => {
   })  
 
   useEffect(() => {
+    send('CLEAR_CONTEXT')
     inputs.email.ref.current.focus()
   }, [])
 
@@ -63,24 +64,27 @@ const SignIn = ({ urlInfo }) => {
   }, [erroredInputs])
 
   const handleSignIn = async () => {
-    try {
-      const validateInputFieldsResult = validateInputFields(inputs)
-      if (validateInputFieldsResult.status === 'error') { 
-        throw new Error(validateInputFieldsResult.message) 
-      }
-      if (validateInputFieldsResult.status !== 'ok') return
-
-    } catch (error) {
-      console.log(error)
+    const validateInputFieldsResult = validateInputFields(inputs)
+    if (validateInputFieldsResult.status === 'error') { 
+      throw new Error(validateInputFieldsResult.message) 
     }
+    if (validateInputFieldsResult.status !== 'ok') return
+    
+    send('SIGN_IN', {email: emailRef.current.value, password: passwordRef.current.value, rememberMe: rememberMeRef.current.checked})              
   }
 
   useEffect(() => {    
-    
-  },) 
+    if (state.context.userInfo.status === 'ok') {
+      navigate('/')
+    }
+  }, [state.context.userInfo.status]) 
+
+
  
+  
   return (
-    <>
+    <>    
+    { console.log(state.value) }
       <Grid className={moduleStyle.wrapper}>
         <Paper className={moduleStyle.loginBox} elevation={0}>
           <Box>
@@ -93,13 +97,24 @@ const SignIn = ({ urlInfo }) => {
             <CheckBoxGroup label='Remember me' inputRef={rememberMeRef} className={moduleStyle.checkBoxGroup} />
           </Box>
           <Box className={moduleStyle.loginBoxfooter}>
-            <LoadingButton variant='contained' fullWidth 
-            onClick={() => {
-              send('SIGN_IN', {email: emailRef.current.value, password: passwordRef.current.value, rememberMe: rememberMeRef.current.checked})              
-            }}
-            loading={false} endIcon={<></>} loadingPosition='end' >Sign in</LoadingButton>
+            <LoadingButton 
+              variant='contained' 
+              fullWidth 
+              onClick={handleSignIn}
+              loading={state.context.inProgress}
+              endIcon={<></>}
+              loadingPosition='end' 
+            >
+              Sign in
+            </LoadingButton>
           </Box>
           <Box className={moduleStyle.loginBoxError}>
+            { (state.context.userInfo.status === 'accountIsExpired' || state.context.userInfo.status === 'warning' || state.context.userInfo.status === 'error')
+                ? 
+                  <FormError message={state.context.userInfo.message} />
+                :
+                  ''
+            }
           </Box>
         </Paper>
       </Grid>

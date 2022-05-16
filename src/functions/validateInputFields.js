@@ -18,7 +18,7 @@ export const validateInputFields = (inputs) => {
             
             if (currentKey.required) {
               if (inputValue.replace(/\s+/g, '') === '') {
-                errorText = currentKey.name + ' is required'
+                errorText = currentKey.label + ' is required'
                 erroredElements.push(currentKey.ref.current)
               }
   
@@ -27,7 +27,7 @@ export const validateInputFields = (inputs) => {
     
             if (currentKey.pattern && notChecked) {
               if (!inputValue.match(currentKey.pattern)) {
-                errorText = 'Invalid ' + currentKey.name
+                errorText = 'Invalid ' + currentKey.label
                 erroredElements.push(currentKey.ref.current)
               }
   
@@ -36,7 +36,7 @@ export const validateInputFields = (inputs) => {
     
             if (currentKey.match) {
               if(inputValue !== currentKey.match.current.value) {
-                errorText = currentKey.matchLabel + ' should match ' + currentKey.name
+                errorText = currentKey.matchLabel + ' should match ' + currentKey.label
                 erroredElements.push(currentKey.ref.current)
               }
             }  

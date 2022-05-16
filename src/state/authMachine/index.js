@@ -8,7 +8,9 @@ export const authMachine = createMachine({
   preserveActionOrder: true,
   initial: 'pending',
   context: {
-    userInfo: undefined,
+    userInfo: {
+      status: ''
+    },
     inProgress: false
   },
 
@@ -19,6 +21,9 @@ export const authMachine = createMachine({
       on: {
         SIGN_IN: {
           target: 'gettingUserInfo'        
+        },
+        CLEAR_CONTEXT: {
+          target: 'clearingContext'
         }
       }
     },    
@@ -41,11 +46,7 @@ export const authMachine = createMachine({
     validatingUser: {
       always: [
         {
-          target: 'settingToken',          
-          cond: (context, event) => context.userInfo.status === 'ok'
-        },
-        {
-          target: 'accountIsExpired',
+          target: 'warning',          
           cond: (context, event) => context.userInfo.status === 'accountIsExpired'
         },
         {
@@ -61,16 +62,42 @@ export const authMachine = createMachine({
           cond: (context, event) => context.userInfo.status === 'error'
         },
         {
-          target: 'fail'
+          target: 'error',
+          cond: (context, event) => context.userInfo.status !== 'ok'
+        },
+        {
+          target: 'settingToken',          
+          cond: (context, event) => context.userInfo.status === 'ok'
         }
       ]      
     },
 
-    accountIsExpired: {
+    settingToken: {
+      invoke: {
+        id: 'storeToken',
+        src: doStoreToken,
+        onDone: [
+          {
+            target: 'success',
+            cond: (context, event) => event.data.status === 'ok'
+          },
+          {
+            target: 'warning',
+            cond: (context, event) => event.data.status === 'warning'
+          },
+          {
+            target: 'error',
+            cond: (context, event) => event.data.status === 'error'
+          }
+        ]
+      }
+    },
+    
+    success: {
       always: {
         target: 'finish'
       }
-    },
+    },    
 
     shouldChangePassword: {
       always: {
@@ -78,38 +105,40 @@ export const authMachine = createMachine({
       }
     },
 
-    settingToken: {
-      invoke: {
-        id: 'storeToken',
-        src: doStoreToken,
-        onDone: {
-          target: 'finish'
-        }
-      }
-    },
-
     warning: {
+      entry: assign({ inProgress: false }),     
       always: {
         target: 'finish'
       }
     },
 
     error: {
+      entry: assign({ inProgress: false }),
       always: {
         target: 'finish'
       }
     },
 
     fail: {
+      entry: assign({ inProgress: false }),
       always: {        
         target: 'finish'
       }
     },    
 
     finish: {
-      entry: assign({ inProgress: false }),      
-      actions: () => console.log('aaa'),
-      type: 'final'
+      on: {
+        SIGN_IN: {
+          target: 'gettingUserInfo'        
+        }
+      }
+    },
+    
+    clearingContext: {
+      always: {
+        actions: (context) => clearContext(context),
+        target: 'pending'
+      }
     }
 
   }
@@ -126,6 +155,8 @@ service.start()
 
 // functions
 
+
+// get user
 async function doGetUser(context, event) {
   try {
     const { email, password, rememberMe } = event
@@ -141,6 +172,7 @@ async function doGetUser(context, event) {
   }
 }
 
+// store token, depending on config storeType
 async function doStoreToken(context, event) {
   try {
     const { token, clientRememberMe } = context.userInfo
@@ -152,4 +184,16 @@ async function doStoreToken(context, event) {
   } catch (error) {
     return setError(error)
   }
+}
+
+// clear context
+function clearContext(context) {
+  context = {
+    userInfo: {
+      status: ''
+    },
+    inProgress: false
+  }  
+
+  console.log(context)
 }
