@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { setSuccess, setWarning, setError } from 'functions/setReply'
+import { useQuery } from 'react-query'
 
 export const fetchOptions = {
   headers: {
@@ -19,7 +20,7 @@ export async function baseFetch(method, url, data = {}, accepts = {}) {
       "Access-Control-Allow-Origin": "*"
     }
 
-    const requestResult = await axios({ method, url, data, headers })   
+    const requestResult = await axios({ method, url, data, headers })
 
     return requestResult.data
   } catch (error) {

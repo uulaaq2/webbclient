@@ -2,8 +2,8 @@ const apiServer = 'http://AUBOTD9X94HD2:3001'
 
 module.exports = {
     showClientDevelopmentErros: true,
-    cookieExpiresIn: 14,
     localStorageType: 'cookie',
+    localStorageExpiresIn: 14,
     app: {
         corporateTitle: 'Indorama Ventures Oxide Pty Ltd',
         name: 'IBOS'

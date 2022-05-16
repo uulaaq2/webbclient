@@ -1,4 +1,3 @@
-import { ConfirmationNumber } from '@mui/icons-material'
 import config from 'config'
 import { setSuccess, setWarning, setError } from 'functions/setReply'
 
@@ -17,9 +16,10 @@ export function getLocalStorage(name) {
 function setCookie(key, value, setExpirationTime) {
   try {        
     let expires = ''
-    if (setExpirationTime === true) {
+    if (setExpirationTime) {
+      console.log('bbb ', setExpirationTime)
       let date = new Date();
-      date.setTime(date.getTime() + (cookieExpiresIn * 24 * 60 * 60 * 1000));
+      date.setTime(date.getTime() + (config.localStorageExpiresIn * 24 * 60 * 60 * 1000));
       expires = "expires=" + date.toUTCString();
     }
     

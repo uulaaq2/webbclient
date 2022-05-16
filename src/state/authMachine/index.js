@@ -1,48 +1,115 @@
-import { createMachine, interpret, send } from 'xstate';
+import { createMachine, interpret, assign } from 'xstate'
+import getUser from 'functions/user/getUser'
+import { setLocalStorage } from 'functions/localStorage';
+import { setError } from 'functions/setReply';
 
 export const authMachine = createMachine({
   id: 'authMachine',
   preserveActionOrder: true,
-  initial: 'init',
+  initial: 'pending',
   context: {
     userInfo: undefined,
     inProgress: false
   },
 
   states: {
-    init: {
+
+    pending: {
+     
       on: {
-        onA: {
-          actions: () => console.log(' A')
+        SIGN_IN: {
+          target: 'gettingUserInfo'        
+        }
+      }
+    },    
+
+    gettingUserInfo: {      
+      entry: assign({ inProgress: true }),
+      invoke: {
+        id: 'getUser',
+        src: doGetUser,
+        onDone: {
+          target: 'validatingUser'
         },
-        onB: {
-         target: 'abc'
+        onError: {
+          target: 'error'
         }
-      }
-    },
-    abc: {
-      always: {
-        actions: () => console.log('always')
       },
-      on: {
-        onC: {
-            actions: () => console.log('C')
+      exit: assign({ userInfo: (context, event) => event.data })
+    },
+
+    validatingUser: {
+      always: [
+        {
+          target: 'settingToken',          
+          cond: (context, event) => context.userInfo.status === 'ok'
+        },
+        {
+          target: 'accountIsExpired',
+          cond: (context, event) => context.userInfo.status === 'accountIsExpired'
+        },
+        {
+          target: 'shouldChangePassword',
+          cond: (context, event) => context.userInfo.status === 'shouldChangePassword'
+        },        
+        {
+          target: 'warning',
+          cond: (context, event) => context.userInfo.status === 'warning'
+        },
+        {
+          target: 'error',
+          cond: (context, event) => context.userInfo.status === 'error'
+        },
+        {
+          target: 'fail'
+        }
+      ]      
+    },
+
+    accountIsExpired: {
+      always: {
+        target: 'finish'
+      }
+    },
+
+    shouldChangePassword: {
+      always: {
+        target: 'finish'
+      }
+    },
+
+    settingToken: {
+      invoke: {
+        id: 'storeToken',
+        src: doStoreToken,
+        onDone: {
+          target: 'finish'
         }
       }
     },
-    ccc: {
-      on: {
-        onD: {
-          actions: () => console.log('D'),
-        }
+
+    warning: {
+      always: {
+        target: 'finish'
       }
     },
-    ddd: {
-      on: {
-        onE: {
-          actions: () => console.log('E')
-        }
+
+    error: {
+      always: {
+        target: 'finish'
       }
+    },
+
+    fail: {
+      always: {        
+        target: 'finish'
+      }
+    },    
+
+    finish: {
+      entry: assign({ inProgress: false }),      
+      actions: () => console.log('aaa'),
+      type: 'final'
     }
 
   }
@@ -56,3 +123,33 @@ const service = interpret(authMachine).onTransition((state) => {
 
 // Start the service
 service.start()
+
+// functions
+
+async function doGetUser(context, event) {
+  try {
+    const { email, password, rememberMe } = event
+
+    const user = await getUser(email, password)
+
+    return {
+      ...user,
+      clientRememberMe: rememberMe
+    }
+  } catch (error) {
+    return setError(error)
+  }
+}
+
+async function doStoreToken(context, event) {
+  try {
+    const { token, clientRememberMe } = context.userInfo
+    const { Can_Be_Remembered } = context.userInfo.user    
+
+    const setTokenResult = await setLocalStorage('token', token, clientRememberMe && Can_Be_Remembered)
+
+    return setTokenResult
+  } catch (error) {
+    return setError(error)
+  }
+}

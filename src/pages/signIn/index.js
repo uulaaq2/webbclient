@@ -76,9 +76,8 @@ const SignIn = ({ urlInfo }) => {
   }
 
   useEffect(() => {    
-
-
-  }, []) 
+    
+  },) 
  
   return (
     <>
@@ -94,7 +93,11 @@ const SignIn = ({ urlInfo }) => {
             <CheckBoxGroup label='Remember me' inputRef={rememberMeRef} className={moduleStyle.checkBoxGroup} />
           </Box>
           <Box className={moduleStyle.loginBoxfooter}>
-            <LoadingButton variant='contained' fullWidth onClick={() => send('onB')} loading={false} endIcon={<></>} loadingPosition='end' >Sign in</LoadingButton>
+            <LoadingButton variant='contained' fullWidth 
+            onClick={() => {
+              send('SIGN_IN', {email: emailRef.current.value, password: passwordRef.current.value, rememberMe: rememberMeRef.current.checked})              
+            }}
+            loading={false} endIcon={<></>} loadingPosition='end' >Sign in</LoadingButton>
           </Box>
           <Box className={moduleStyle.loginBoxError}>
           </Box>

@@ -2,7 +2,7 @@ import { setSuccess, setWarning, setError } from "functions/setReply"
 import { fetchOptions, baseFetch } from "functions/baseFetch"
 import config from 'config'
 
-async function signInWithCredentials(email, password) {  
+async function getUser(email, password) {  
   try {
     const url = config.api.urls.user.signIn
     const data = {email, password}
@@ -16,4 +16,4 @@ async function signInWithCredentials(email, password) {
   }
 }
 
-export default signInWithCredentials
+export default getUser
