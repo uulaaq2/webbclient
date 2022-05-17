@@ -1,14 +1,19 @@
 import { createMachine, interpret, assign } from 'xstate'
-import getUser from 'functions/user/getUser'
+import getUserWithCredentials from 'functions/user/getUserWithCredentials'
+import getUserWithToken from 'functions/user/getUserWithToken'
 import { setLocalStorage } from 'functions/localStorage';
-import { setError } from 'functions/setReply';
+import { setError, setSuccess } from 'functions/setReply';
 
 export const authMachine = createMachine({
   id: 'authMachine',
   preserveActionOrder: true,
   initial: 'pending',
   context: {
-    userInfo: undefined,
+    userInfo: {
+      status: ''
+    },
+    signInType: '',
+    clientRememberMe: false,
     inProgress: false
   },
 
@@ -19,6 +24,9 @@ export const authMachine = createMachine({
       on: {
         SIGN_IN: {
           target: 'gettingUserInfo'        
+        },
+        CLEAR_CONTEXT: {
+          target: 'clearingContext'
         }
       }
     },    
@@ -35,17 +43,17 @@ export const authMachine = createMachine({
           target: 'error'
         }
       },
-      exit: assign({ userInfo: (context, event) => event.data })
+      exit: [
+              assign({ signInType: (context, event) => event.data.signInType }),      
+              assign({ clientRememberMe: (context, event) => event.data.clientRememberMe }),
+              assign({ userInfo: (context, event) => event.data.userInfo })            
+            ]
     },
 
     validatingUser: {
       always: [
         {
-          target: 'settingToken',          
-          cond: (context, event) => context.userInfo.status === 'ok'
-        },
-        {
-          target: 'accountIsExpired',
+          target: 'warning',          
           cond: (context, event) => context.userInfo.status === 'accountIsExpired'
         },
         {
@@ -61,55 +69,77 @@ export const authMachine = createMachine({
           cond: (context, event) => context.userInfo.status === 'error'
         },
         {
-          target: 'fail'
+          target: 'error',
+          cond: (context, event) => context.userInfo.status !== 'ok'
+        },
+        {
+          target: 'settingToken',          
+          cond: (context, event) => context.userInfo.status === 'ok'
         }
-      ]      
-    },
-
-    accountIsExpired: {
-      always: {
-        target: 'finish'
-      }
-    },
-
-    shouldChangePassword: {
-      always: {
-        target: 'finish'
-      }
-    },
+      ]         
+    },    
 
     settingToken: {
       invoke: {
         id: 'storeToken',
         src: doStoreToken,
-        onDone: {
-          target: 'finish'
-        }
+        onDone: [
+          {
+            target: 'success',
+            cond: (context, event) => event.data.status === 'ok'
+          },
+          {
+            target: 'warning',
+            cond: (context, event) => event.data.status === 'warning'
+          },
+          {
+            target: 'error',
+            cond: (context, event) => event.data.status === 'error'
+          }
+        ]
+      }
+    },
+    
+    success: {
+      always: {
+        target: 'finished'
+      }
+    },    
+
+    shouldChangePassword: {
+      always: {
+        target: 'finished'
       }
     },
 
     warning: {
+      entry: assign({ inProgress: false }),     
       always: {
-        target: 'finish'
+        target: 'finished'
       }
     },
 
     error: {
+      entry: assign({ inProgress: false }),
       always: {
-        target: 'finish'
+        target: 'finished'
       }
     },
 
     fail: {
+      entry: assign({ inProgress: false }),
       always: {        
-        target: 'finish'
+        target: 'finished'
       }
     },    
 
-    finish: {
-      entry: assign({ inProgress: false }),      
-      actions: () => console.log('aaa'),
-      type: 'final'
+    finished: {},
+    
+    clearingContext: {
+      always: {
+        actions: (context) => doClearContext(context),
+        target: 'pending'
+      }
     }
 
   }
@@ -126,24 +156,43 @@ service.start()
 
 // functions
 
+
+// get user
 async function doGetUser(context, event) {
   try {
-    const { email, password, rememberMe } = event
+    const { email = undefined, password = undefined, rememberMe = undefined, token = undefined } = event
+    const signInType = email ? 'credentials' : 'token'    
+    let getUserResult
+    let rememberMeTemp = rememberMe
 
-    const user = await getUser(email, password)
+    if (signInType === 'credentials') {
+      getUserResult = await getUserWithCredentials(email, password)
+    } else {
+      rememberMeTemp = true
+      getUserResult = await getUserWithToken(token)
+    }    
 
     return {
-      ...user,
-      clientRememberMe: rememberMe
+      userInfo: getUserResult,
+      signInType,
+      clientRememberMe: rememberMeTemp || false
     }
   } catch (error) {
-    return setError(error)
+    return {
+      userInfo: setError(error)
+    }
   }
 }
 
+// store token, depending on config storeType
 async function doStoreToken(context, event) {
   try {
-    const { token, clientRememberMe } = context.userInfo
+    if (context.signInType === 'token') {
+      return setSuccess()
+    }
+
+    const { clientRememberMe } = context
+    const { token } = context.userInfo    
     const { Can_Be_Remembered } = context.userInfo.user    
 
     const setTokenResult = await setLocalStorage('token', token, clientRememberMe && Can_Be_Remembered)
@@ -152,4 +201,16 @@ async function doStoreToken(context, event) {
   } catch (error) {
     return setError(error)
   }
+}
+
+// clear context
+function doClearContext(context) {
+  context = {
+    userInfo: {
+      status: ''
+    },
+    inProgress: false
+  }  
+
+  console.log(context)
 }

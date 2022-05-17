@@ -7,9 +7,9 @@ export function setLocalStorage(key, value, setExpirationTime = null) {
   }
 }
 
-export function getLocalStorage(name) {
+export function getLocalStorage(key) {
   if (config.localStorageType === 'cookie') {
-    return getCookie(key, value)
+    return getCookie(key)
   }
 }
 
@@ -17,7 +17,6 @@ function setCookie(key, value, setExpirationTime) {
   try {        
     let expires = ''
     if (setExpirationTime) {
-      console.log('bbb ', setExpirationTime)
       let date = new Date();
       date.setTime(date.getTime() + (config.localStorageExpiresIn * 24 * 60 * 60 * 1000));
       expires = "expires=" + date.toUTCString();
@@ -36,7 +35,7 @@ function setCookie(key, value, setExpirationTime) {
   }
 }
 
-function getCookie(key, value) {
+function getCookie(key) {
   try {
     key += "="
     const cDecoded = decodeURIComponent(document.cookie);
@@ -45,7 +44,7 @@ function getCookie(key, value) {
     
     if (cArr) {
       cArr.forEach(val => {
-          if (val.indexOf(key) === 0) res = val.substring(name.length);
+          if (val.indexOf(key) === 0) res = val.substring(key.length);
       })      
     }
 
