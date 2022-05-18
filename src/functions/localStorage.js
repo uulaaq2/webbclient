@@ -54,8 +54,12 @@ function getCookie(key) {
       key,
       value: res
     }
-
-    return setSuccess(data)
+    
+    if (res) {
+      return setSuccess(data)
+    } else {
+      return setWarning('No token found in local storage')
+    }
   } catch (error) {
     return setError(error)
   }

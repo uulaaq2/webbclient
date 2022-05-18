@@ -8,7 +8,6 @@ import { clearErrors, validateInputFields } from 'functions/validateInputFields'
 import FormError from 'baseComponents/Alerts/FormError'
 import InputGroup from 'baseComponents/InputGroup'
 import CheckBoxGroup from 'baseComponents/CheckboxGroup'
-import NavigateTo from 'baseComponents/NavigateTo'
 
 import { Navigate, useNavigate } from 'react-router-dom'
 import { Grid, Paper, Box, Button, CircularProgress } from '@mui/material'
@@ -68,7 +67,8 @@ const SignIn = ({ urlInfo }) => {
       throw new Error(validateInputFieldsResult.message) 
     }
     if (validateInputFieldsResult.status !== 'ok') return
-    
+    console.log(' abc ', emailRef.current.value)
+    send('RESET')
     send('SIGN_IN', {
           email: emailRef.current.value, 
           password: passwordRef.current.value, 
@@ -87,7 +87,6 @@ const SignIn = ({ urlInfo }) => {
   
   return (
     <>    
-    { console.log('aaa ', state.context) }
       <Grid className={moduleStyle.wrapper}>
         <Paper className={moduleStyle.loginBox} elevation={0}>
           <Box>
@@ -112,6 +111,7 @@ const SignIn = ({ urlInfo }) => {
             </LoadingButton>
           </Box>
           <Box className={moduleStyle.loginBoxError}>
+            { console.log(state.context.userInfo)}
             { (state.context.userInfo.status === 'accountIsExpired' || state.context.userInfo.status === 'warning' || state.context.userInfo.status === 'error')
                 ? 
                   <FormError message={state.context.userInfo.message} />

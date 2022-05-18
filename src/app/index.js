@@ -5,7 +5,7 @@ import {
   Route,
   Routes,
 } from "react-router-dom"
-import PrivateRoute from 'baseComponents/privateRoute'
+import PrivateRoute from 'components/privateRoute'
 
 import Home from 'pages/home'
 import Public from 'pages/public'
