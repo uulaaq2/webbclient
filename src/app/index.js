@@ -21,7 +21,7 @@ const App = () => {
             <Route exact path="/" element={<Home />} />                    
             <Route exact path="public" element={<Public />} />        
             <Route exact path="signIn" element={<SignIn />} />
-            <Route exact path="me/changepassword/:token" element={<ChangePassword />} />            
+            <Route exact path="me/changepassword/:token" page={<ChangePassword />} />            
             <Route 
               path="protected" 
               element={

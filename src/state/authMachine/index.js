@@ -3,11 +3,13 @@ import getUserWithCredentials from 'functions/user/getUserWithCredentials'
 import getUserWithToken from 'functions/user/getUserWithToken'
 import { setLocalStorage } from 'functions/localStorage';
 import { setError, setSuccess, setWarning } from 'functions/setReply';
+import getUser from './../../functions/user/getUserWithCredentials';
+import changeUserPassword from './../../functions/user/changeUserPassword';
 
 export const authMachine = createMachine({
   id: 'authMachine',
   preserveActionOrder: true,
-  initial: 'pending',
+  initial: 'waiting',
   context: {
     userInfo: {
       status: ''
@@ -19,7 +21,7 @@ export const authMachine = createMachine({
 
   states: {
 
-    pending: {      
+    waiting: {      
       on: {
         SIGN_IN: {
           target: 'gettingUserInfo'        
@@ -135,8 +137,9 @@ export const authMachine = createMachine({
 
     finished: {
       on: {
-        RESET: {
-          target: 'pending'
+        SIGN_IN: {
+          target: 'gettingUserInfo',          
+          cond: (context) => context.userInfo.status !== 'ok'
         }
       }
     },
@@ -144,7 +147,7 @@ export const authMachine = createMachine({
     clearingContext: {
       always: {
         actions: (context) => doClearContext(context),
-        target: 'pending'
+        target: 'waiting'
       }
     }
 
@@ -166,19 +169,29 @@ service.start()
 // get user
 async function doGetUser(context, event) {
   try {    
-    const { email = undefined, password = undefined, rememberMe = undefined, token = undefined } = event
-    const signInType = email ? 'credentials' : 'token'    
+    const { type = '', email = undefined, password = undefined, rememberMe = undefined, token = undefined } = event        
+    let signInType    
     let getUserResult
     let rememberMeTemp = rememberMe
 
-    if (signInType === 'credentials') {
+    if (type === 'signInWithCredentials') {
+      signInType = 'credentials'
       getUserResult = await getUserWithCredentials(email, password)
-    } else {
+    }
+    
+    if (type === 'signInWithToken') {
+      signInType = 'token'
       rememberMeTemp = true
       if (token) {
         getUserResult = await getUserWithToken(token)
       } 
-    }    
+    }
+
+    if (type === 'changeUserPassword') {
+      signInType = 'credentials'      
+      rememberMeTemp = rememberMe || (context.userInfo.status !== '' ? context.clientRememberMe : undefined)
+      getUserResult = await changeUserPassword(token, password)
+    }
 
     return {
       userInfo: getUserResult || { ...context },

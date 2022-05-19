@@ -15,7 +15,7 @@ function useGetUserInfo() {
         const getTokenResult = getLocalStorage('token')
         const token = getTokenResult.status === 'ok' ? getTokenResult.value : ''
         if (token) {
-          send('SIGN_IN', { token })
+          send('SIGN_IN', { type: 'signInWithToken', token })
         } else {
           send('FAIL')
         }
@@ -26,7 +26,7 @@ function useGetUserInfo() {
     inProgress: state.context.inProgress,
     completed: state.value === 'finished',
     success: !state.context.inProgress && state.context.userInfo.status !== '' & state.context.userInfo.status === 'ok',
-    user: state.context.userInfo
+    user: state.context.userInfo.user
   }      
 
 }

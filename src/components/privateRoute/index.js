@@ -1,20 +1,29 @@
 import React, { useEffect } from 'react'
-import {
-  BrowserRouter as Router,
-  useNavigate,
-} from "react-router-dom"
+import { useNavigate } from 'react-router-dom'
+import useGetUserInfo from 'functions/user/useGetUserInfo'
 import config from 'config'
+import PageLoading from 'components/PageLoading/index'
 
-const PrivateRoute = ({ currentMachine, element }) => {
-  const navigate = useNavigate()  
+const index = ({ page }) => {
+  const userInfo = useGetUserInfo()
+  const navigate = useNavigate()
 
-  useEffect(() => {
-    if (!currentMachine.context.user) {
-      navigate(config.urls.user.signIn.path)      
-    }   
-  }, [])
+  useEffect(() => {   
+    if (userInfo.completed && !userInfo.success) {
+      navigate(config.urls.public.path)
+    }
+  }, [userInfo.completed])
 
-  return element
-};
+  if (userInfo.inProgress) {
+    return <PageLoading />
+  }
 
-export default PrivateRoute;
+  if (userInfo.completed === true) {      
+    if (userInfo.success) {
+      return page
+    }
+  }  
+
+}
+
+export default index

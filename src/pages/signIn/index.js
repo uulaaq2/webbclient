@@ -10,17 +10,16 @@ const index = () => {
   const userInfo = useGetUserInfo()
   const navigate = useNavigate()
 
-  console.log(userInfo)
   useEffect(() => {
     if (userInfo.success) {
-      
-      navigate(userInfo.user.Home_Page || config.urls.home.path)
+      navigate(userInfo.user.Home_Page || config.urls.public.path)
     }
-  }, [userInfo.success])
+  }, [userInfo.completed])
 
   if (userInfo.inProgress) {
     return <PageLoading />
   }
+
   if (userInfo.completed === true) {      
     if (!userInfo.success) {
       return <SignIn />
