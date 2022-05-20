@@ -14,7 +14,7 @@ async function changeUserPassword(token, newPassword) {
 
     return getChangePasswordResult
   } catch (error) {
-    return setError(error.message)
+    return setError(error)
   }
 }
 

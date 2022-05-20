@@ -68,22 +68,13 @@ const SignIn = ({ urlInfo }) => {
     }
     if (validateInputFieldsResult.status !== 'ok') return
     
-    send('SIGN_IN', {
-          type: 'signInWihCredentials',
+    send('SIGN_IN', {    
+          requestType: 'signInWihCredentials',
           email: emailRef.current.value, 
           password: passwordRef.current.value, 
           rememberMe: rememberMeRef.current.checked
-    })              
+    })      
   }
-
-  useEffect(() => {    
-    if (state.context.userInfo.status === 'ok') {
-      navigate('/')
-    }
-  }, [state.context.userInfo.status]) 
-
-
- 
   
   return (
     <>        
@@ -103,6 +94,7 @@ const SignIn = ({ urlInfo }) => {
               variant='contained' 
               fullWidth 
               onClick={handleSignIn}
+              disabled={state.context.inProgress}
               loading={state.context.inProgress}
               endIcon={<></>}
               loadingPosition='end' 
@@ -110,7 +102,7 @@ const SignIn = ({ urlInfo }) => {
               Sign in
             </LoadingButton>
           </Box>
-          <Box className={moduleStyle.loginBoxError}>
+          <Box className={moduleStyle.errorBox}>
             { (state.context.userInfo.status === 'accountIsExpired' || state.context.userInfo.status === 'warning' || state.context.userInfo.status === 'error')
                 ? 
                   <FormError message={state.context.userInfo.message} />

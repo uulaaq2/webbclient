@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import useGetUserInfo from 'functions/user/useGetUserInfo'
 import config from 'config'
 import PageLoading from 'components/PageLoading/index'
+import AppNavBar from 'components/AppNavBar'
 
-const index = ({ page }) => {
+const index = ({ element }) => {
   const userInfo = useGetUserInfo()
   const navigate = useNavigate()
 
@@ -20,7 +21,12 @@ const index = ({ page }) => {
 
   if (userInfo.completed === true) {      
     if (userInfo.success) {
-      return page
+      return (
+        <>
+          <AppNavBar />
+          { element }
+        </>
+      )
     }
   }  
 

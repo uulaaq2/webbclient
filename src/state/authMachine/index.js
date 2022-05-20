@@ -5,6 +5,7 @@ import { setLocalStorage } from 'functions/localStorage';
 import { setError, setSuccess, setWarning } from 'functions/setReply';
 import getUser from './../../functions/user/getUserWithCredentials';
 import changeUserPassword from './../../functions/user/changeUserPassword';
+import { ConstructionOutlined } from '@mui/icons-material';
 
 export const authMachine = createMachine({
   id: 'authMachine',
@@ -15,13 +16,13 @@ export const authMachine = createMachine({
       status: ''
     },
     signInType: '',
-    clientRememberMe: false,
+    rememberMe: false,
     inProgress: false
   },
 
   states: {
 
-    waiting: {      
+    waiting: {     
       on: {
         SIGN_IN: {
           target: 'gettingUserInfo'        
@@ -37,16 +38,15 @@ export const authMachine = createMachine({
       invoke: {
         id: 'getUser',
         src: doGetUser,
-        onDone: {
+        onDone: {          
           target: 'validatingUser'
         },
-        onError: {
+        onError: {          
           target: 'error'
         }
       },
       exit: [
               assign({ signInType: (context, event) => event.data.signInType }),      
-              assign({ clientRememberMe: (context, event) => event.data.clientRememberMe }),
               assign({ userInfo: (context, event) => event.data.userInfo })            
             ]
     },
@@ -122,7 +122,9 @@ export const authMachine = createMachine({
     },
 
     error: {
-      entry: assign({ inProgress: false }),
+      entry: [
+        assign({ inProgress: false }), 
+      ],
       always: {
         target: 'finished'
       }
@@ -168,39 +170,41 @@ service.start()
 
 // get user
 async function doGetUser(context, event) {
-  try {    
-    const { type = '', email = undefined, password = undefined, rememberMe = undefined, token = undefined } = event        
+  try {        
+    const { requestType = '', email = undefined, password = undefined, rememberMe = undefined, token = undefined } = event        
     let signInType    
     let getUserResult
     let rememberMeTemp = rememberMe
 
-    if (type === 'signInWithCredentials') {
+    if (requestType === 'signInWihCredentials') {
       signInType = 'credentials'
-      getUserResult = await getUserWithCredentials(email, password)
+      getUserResult = await getUserWithCredentials(email, password, rememberMe)
     }
     
-    if (type === 'signInWithToken') {
+    if (requestType === 'signInWithToken') {
       signInType = 'token'
-      rememberMeTemp = true
       if (token) {
         getUserResult = await getUserWithToken(token)
+        rememberMeTemp = getUserResult.rememberMe        
       } 
     }
 
-    if (type === 'changeUserPassword') {
+    if (requestType === 'changeUserPassword') {
       signInType = 'credentials'      
-      rememberMeTemp = rememberMe || (context.userInfo.status !== '' ? context.clientRememberMe : undefined)
       getUserResult = await changeUserPassword(token, password)
+      rememberMeTemp = getUserResult.rememberMe
     }
-
+    
     return {
-      userInfo: getUserResult || { ...context },
+      userInfo: getUserResult,
       signInType,
-      clientRememberMe: rememberMeTemp || false
+      rememberMe: rememberMeTemp
     }
   } catch (error) {
     return {
-      userInfo: setError(error)
+      userInfo: setError(error),
+      signInType: '',
+      rememberMe: undefined
     }
   }
 }
@@ -212,12 +216,11 @@ async function doStoreToken(context, event) {
       return setSuccess()
     }
 
-
-    const { clientRememberMe = false } = context
+    const { rememberMe = false } = context
     const { token = '' } = context.userInfo    
     const { Can_Be_Remembered = false } = context.userInfo.user    
 
-    const setTokenResult = await setLocalStorage('token', token, clientRememberMe && Can_Be_Remembered)
+    const setTokenResult = await setLocalStorage('token', token, rememberMe && Can_Be_Remembered)
 
     return setTokenResult
   } catch (error) {

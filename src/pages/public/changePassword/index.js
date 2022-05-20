@@ -4,36 +4,42 @@ import { useParams } from 'react-router-dom'
 import logo from 'images/logo.png'
 import config from 'config'
 import pageInitial from 'functions/pageInitial'
-import moduleStyle from 'pages/ChangePassword/style.css'
+import moduleStyle from 'pages/public/changePassword/style.css'
 import { validateInputFields } from 'functions/validateInputFields'
 import FormError from 'baseComponents/Alerts/FormError'
 import InputGroup from 'baseComponents/InputGroup'
-import CheckBoxGroup from 'baseComponents/CheckboxGroup'
 
-import changeUserPassword from 'functions/user/changeUserPassword'
-
-import { Navigate, useNavigate } from 'react-router-dom'
-import { Grid, Paper, Box, Button, CircularProgress, Typography } from '@mui/material'
+import { useNavigate } from 'react-router-dom'
+import { Grid, Paper, Box, Stack, Button, CircularProgress, Typography, Grow } from '@mui/material'
 import { LoadingButton } from '@mui/lab'
+import { CheckCircleOutline } from '@mui/icons-material'
 
 const getToken = (token) => token.substring(0, token.length - 2)
 const getShowCurrentPassword = (token) => token.charAt(token.length - 2) === '1' ? true : false
-const getRememberMe = (token) => token.charAt(token.length - 1) === '1' ? true : false
+const getRedirectToUsersHomePage = (token) => token.charAt(token.length - 1) === '1' ? true : false
 
-const ChanePassword = () => {
+import { GlobalStateContext } from 'state/globalState'
+import { useActor } from '@xstate/react'
+import { Password } from '@mui/icons-material'
+
+const ChangePassword = () => {
   pageInitial( {pageName: 'user.changePassword'} )
 
-  const { token } = useParams()
+  const globalServices = useContext(GlobalStateContext)  
+  const { send } = globalServices.authService
+  const [ state  ] = useActor(globalServices.authService)  
+  const [showPasswordIsChanged, setShowPasswordIsChanged] = useState(false)
 
+  const { token } = useParams()
+  const navigate = useNavigate()
+  
   const currentPasswordRef = useRef()
   const newPasswordRef = useRef()
   const confirmNewPasswordRef = useRef()  
-  const navigate = useNavigate()
   
   const [erroredInputs, setErroredInputs] = useState([])  
   const [inputs] = useState({
     currentPassword: {      
-      name: 'Current password',
       label: 'Current password',
       type: 'password',
       errorText: '',
@@ -42,7 +48,6 @@ const ChanePassword = () => {
       validate: getShowCurrentPassword(token)
     },    
     newPassword: {      
-      name: 'New password',
       label: 'New password',
       type: 'password',
       errorText: '',
@@ -51,7 +56,6 @@ const ChanePassword = () => {
       validate: true
     },
     confirmNewPassword: {
-      name: 'Confirm new password',
       label: 'Confirm new password',
       type: 'password',
       errorText: '',
@@ -77,6 +81,15 @@ const ChanePassword = () => {
     }
   }, [erroredInputs])
 
+  useEffect(() => {
+    console.log(state.value)
+    console.log(state.context.userInfo)
+    if (state.value === 'finished' && state.context.userInfo.status === 'ok') {
+      setShowPasswordIsChanged(true)
+      console.log('aaa')
+    }
+  }, [state.value])
+
   const handleChangePassword = async () => {
     try {
       const validateInputFieldsResult = validateInputFields(inputs)
@@ -85,14 +98,16 @@ const ChanePassword = () => {
       }
       if (validateInputFieldsResult.status !== 'ok') return
 
-      const aaa = await changePassword(getToken(token), newPasswordRef.current.value)
-      console.log(aaa)
-
+      send('SIGN_IN', {    
+        requestType: 'changeUserPassword',
+        token: getToken(token),
+        password: newPasswordRef.current.value
+      })    
+      
     } catch (error) {
       console.log(error)
     }
   }
-
 
   return (
     <>
@@ -102,29 +117,97 @@ const ChanePassword = () => {
             <img src={logo} alt={config.app.corporateTitle} className={moduleStyle.logo} />
           </Box>
 
-          <Box className={moduleStyle.title}>
-            <Typography variant='h5'>Change your password</Typography>
-          </Box>
+          { !showPasswordIsChanged ? 
+              <>
+                <Box className={moduleStyle.title}>
+                  <Typography variant='h5'>Change your password</Typography>
+                </Box>
 
-          <Box className={moduleStyle.boxContent}>
-            { getShowCurrentPassword(token) 
-              ? 
-                <InputGroup label={inputs.currentPassword.label} type={inputs.currentPassword.type} inputRef={currentPasswordRef} errorText={inputs.currentPassword.errorText} fullWidth />
-              :
-                ''
-            }
-            <InputGroup label={inputs.newPassword.label} type={inputs.newPassword.type} inputRef={newPasswordRef} errorText={inputs.newPassword.errorText} fullWidth />
-            <InputGroup label={inputs.confirmNewPassword.label} type={inputs.confirmNewPassword.type} inputRef={confirmNewPasswordRef} errorText={inputs.confirmNewPassword.errorText} fullWidth />
-          </Box>
-          <Box className={moduleStyle.boxfooter}>
-            <LoadingButton variant='contained' onClick={handleChangePassword} fullWidth loading={currentMachine.context.inProgress} endIcon={<></>} loadingPosition='end' >Change password</LoadingButton>
-          </Box>
-          <Box className={moduleStyle.boxError}> 
-          </Box>
+                <Box className={moduleStyle.boxContent}>
+                  { getShowCurrentPassword(token) 
+                    ? 
+                      <InputGroup label={inputs.currentPassword.label} type={inputs.currentPassword.type} inputRef={currentPasswordRef} errorText={inputs.currentPassword.errorText} fullWidth />
+                    :
+                      ''
+                  }
+                  <InputGroup label={inputs.newPassword.label} type={inputs.newPassword.type} inputRef={newPasswordRef} errorText={inputs.newPassword.errorText} fullWidth />
+                  <InputGroup label={inputs.confirmNewPassword.label} type={inputs.confirmNewPassword.type} inputRef={confirmNewPasswordRef} errorText={inputs.confirmNewPassword.errorText} fullWidth />
+                </Box>
+                <Box className={moduleStyle.boxfooter}>
+                  <LoadingButton 
+                    variant='contained' 
+                    onClick={handleChangePassword} 
+                    fullWidth 
+                    disabled={state.inProgress}
+                    loading={state.inProgress}
+                    endIcon={<></>} 
+                    loadingPosition='end' 
+                  >
+                    Change password
+                  </LoadingButton>
+                </Box>
+                <Box className={moduleStyle.errorBox}>
+                  { (state.context.userInfo.status === 'accountIsExpired' || state.context.userInfo.status === 'warning' || state.context.userInfo.status === 'error')
+                      ? 
+                        <FormError message={state.context.userInfo.message} />
+                      :
+                        ''
+                  }
+                </Box>
+              </>
+            :
+              <PasswordIsChanged countDownFrom={10} redirectTo={config.urls.home} />      
+          }
+
         </Paper>
       </Grid>
     </>
   );
-};
+}
 
-export default ChanePassword;
+const PasswordIsChanged = ({ countDownFrom, redirectTo }) => {
+  const [counter, setCounter] = useState(countDownFrom)
+  const navigate = useNavigate()
+  
+  useEffect(() => {
+
+  }, [])
+
+  useEffect(() => {
+    if (countDownFrom === null) return
+
+    const timer = counter > 0 && setInterval(() => setCounter(counter - 1), 1000);
+    if (counter === 0) {
+      handleRedirect()
+    }
+    return () => clearInterval(timer);    
+  }, [counter]);
+
+  function handleRedirect() {
+    if (!redirectTo)  {
+      navigate('/')
+    } else {
+      navigate(redirectTo.path)
+    }
+  }
+  
+  return (
+    <Typography component="div">
+      <Box sx={{ width: '100%'}}>
+        <Grow in={true}>
+          <Stack spacing={5} alignItems="center" justifyContent="center" style={{padding: "2rem"}}>
+            <CheckCircleOutline color="success" style={{fontSize: "3rem"}} />
+            <Box sx={{ fontSize: 'h5.fontSize', m: 1 }}>
+              New password is set
+            </Box>
+            <Button variant='contained' onClick={handleRedirect}>
+              {`Go to ${redirectTo.name} ${counter}`}
+            </Button>
+          </Stack>
+        </Grow>
+      </Box>
+    </Typography>
+  )
+}
+
+export default ChangePassword;

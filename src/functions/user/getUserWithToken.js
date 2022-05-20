@@ -9,10 +9,10 @@ async function getUserWithToken(token) {
     const accepts = fetchOptions.headers.accepts.json
 
     const getUserResult = await baseFetch('POST', url, data, accepts)
-
+    
     return getUserResult
   } catch (error) {
-    return setError(error.message)
+    return setError(error)
   }
 }
 
